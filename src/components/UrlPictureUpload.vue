@@ -23,6 +23,7 @@ import { uploadPictureByUrlUsingPost } from '@/api/pictureController'
 interface Props {
   picture?: API.PictureVO
   onSuccess?: (newPicture: API.PictureVO) => void
+  spaceId?: number
 }
 
 const props = defineProps<Props>()
@@ -36,6 +37,7 @@ const handleUpload = async () => {
   loading.value = true
   try {
     const params: API.PictureUploadRequest = { fileUrl: fileUrl.value }
+    params.spaceId = props.spaceId
     if (props.picture) {
       params.id = props.picture.id
     }
@@ -77,6 +79,7 @@ const beforeUpload = (file: UploadProps['fileList'][number]) => {
   max-width: 100%;
   max-height: 480px;
 }
+
 .url-picture-upload .img-wrapper {
   text-align: center;
   margin-top: 16px;

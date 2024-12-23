@@ -31,6 +31,12 @@
                     <LogoutOutlined />
                     退出登录
                   </a-menu-item>
+                  <a-menu-item>
+                    <router-link to="/my_space">
+                      <UserOutlined />
+                      我的空间
+                    </router-link>
+                  </a-menu-item>
                 </a-menu>
               </template>
             </a-dropdown>
@@ -47,6 +53,7 @@
 import { computed, h, ref } from 'vue'
 import { HomeOutlined, LogoutOutlined } from '@ant-design/icons-vue'
 import { MenuProps, message } from 'ant-design-vue'
+import { UserOutlined } from '@ant-design/icons-vue'
 
 const loginUserStore = useLoginUserStore()
 
@@ -75,6 +82,11 @@ const originItems = [
     key: '/admin/pictureManage',
     label: '图片管理',
     title: '图片管理',
+  },
+  {
+    key: '/admin/spaceManage',
+    label: '空间管理',
+    title: '空间管理',
   },
   {
     key: 'others',
