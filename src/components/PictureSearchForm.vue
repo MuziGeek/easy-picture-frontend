@@ -69,7 +69,9 @@
 import { onMounted, reactive, ref } from 'vue'
 import dayjs from 'dayjs'
 import { message } from 'ant-design-vue'
-import { listPictureTagCategoryUsingGet } from '@/api/pictureController'
+import {
+  listPictureTagCategoryUsingGet,
+} from '@/api/pictureController'
 
 interface Props {
   onSearch?: (searchParams: API.PictureQueryRequest) => void

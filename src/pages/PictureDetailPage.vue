@@ -46,6 +46,19 @@
             <a-descriptions-item label="大小">
               {{ formatSize(picture.picSize) }}
             </a-descriptions-item>
+            <a-descriptions-item label="主色调">
+              <a-space>
+                {{ picture.picColor ?? '-' }}
+                <div
+                  v-if="picture.picColor"
+                  :style="{
+                    backgroundColor: toHexColor(picture.picColor),
+                    width: '16px',
+                    height: '16px',
+                  }"
+                />
+              </a-space>
+            </a-descriptions-item>
           </a-descriptions>
           <a-space wrap>
             <a-button v-if="canEdit" type="default" @click="doEdit">
@@ -78,7 +91,7 @@
 import { message } from 'ant-design-vue'
 import { ref, reactive, onMounted, computed } from 'vue'
 import { deletePictureUsingPost, getPictureVoByIdUsingGet } from '@/api/pictureController'
-import { formatSize,downloadImage } from '@/utils'
+import { formatSize, downloadImage, toHexColor } from '@/utils'
 import { useLoginUserStore } from '@/stores/useLoginUserStore'
 import router from '@/router'
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
@@ -154,6 +167,4 @@ onMounted(() => {
 #pictureDetailPage {
   margin-bottom: 16px;
 }
-
-
 </style>
