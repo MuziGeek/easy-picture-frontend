@@ -7,8 +7,7 @@
       保存至空间：<a :href="`/space/${spaceId}`" target="_blank">{{ spaceId }}</a>
     </a-typography-paragraph>
     <!-- 选择上传方式 -->
-    <a-tabs v-model:activeKey="uploadType"
-    >>
+    <a-tabs v-model:activeKey="uploadType">
       <a-tab-pane key="file" tab="文件上传">
         <PictureUpload :picture="picture" :spaceId="spaceId" :onSuccess="onSuccess" />
       </a-tab-pane>
@@ -16,7 +15,18 @@
         <UrlPictureUpload :picture="picture" :spaceId="spaceId" :onSuccess="onSuccess" />
       </a-tab-pane>
     </a-tabs>
-    <a-form v-if="picture" layout="vertical" :model="pictureForm"@finish="handleSubmit">
+    <!--图片编辑区域-->
+    <div v-if="picture" class="edit-bar">
+      <a-button :icon="h(EditOutlined)" @click="doEditPicture">编辑图片</a-button>
+      <ImageCropper
+        ref="imageCropperRef"
+        :imageUrl="picture?.url"
+        :picture="picture"
+        :spaceId="spaceId"
+        :onSuccess="onCropSuccess"
+      />
+    </div>
+    <a-form v-if="picture" layout="vertical" :model="pictureForm" @finish="handleSubmit">
       <a-form-item label="名称" name="name">
         <a-input v-model:value="pictureForm.name" placeholder="请输入名称" />
       </a-form-item>
@@ -39,7 +49,7 @@
       </a-form-item>
       <a-form-item label="标签" name="tags">
         <a-select
-          v-model:value="pictureForm.tags "
+          v-model:value="pictureForm.tags"
           :options="tagOptions"
           mode="tags"
           placeholder="请输入标签"
@@ -55,12 +65,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, h, onMounted, reactive, ref } from 'vue'
 import PictureUpload from '@/components/PictureUpload.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { editPictureUsingPost, getPictureVoByIdUsingGet, listPictureTagCategoryUsingGet } from '@/api/pictureController'
+import {
+  editPictureUsingPost,
+  getPictureVoByIdUsingGet,
+  listPictureTagCategoryUsingGet,
+} from '@/api/pictureController'
 import { message } from 'ant-design-vue'
 import UrlPictureUpload from '@/components/UrlPictureUpload.vue'
+import ImageCropper from '@/components/ImageCropper.vue'
+import { EditOutlined } from '@ant-design/icons-vue'
 
 const picture = ref<API.PictureVO>()
 const pictureForm = reactive<API.PictureEditRequest>({})
@@ -78,6 +94,20 @@ const route = useRoute()
 const spaceId = computed(() => {
   return route.query?.spaceId
 })
+// 图片编辑弹窗引用
+const imageCropperRef = ref()
+
+// 编辑图片
+const doEditPicture = () => {
+  if (imageCropperRef.value) {
+    imageCropperRef.value.openModal()
+  }
+}
+
+// 编辑成功事件
+const onCropSuccess = (newPicture: API.PictureVO) => {
+  picture.value = newPicture
+}
 
 /**
  * 提交表单
@@ -133,7 +163,6 @@ onMounted(() => {
   getTagCategoryOptions()
 })
 
-
 // 获取老数据
 const getOldPicture = async () => {
   // 获取数据
@@ -156,12 +185,16 @@ const getOldPicture = async () => {
 onMounted(() => {
   getOldPicture()
 })
-
 </script>
 
 <style scoped>
 #addPicturePage {
   max-width: 720px;
   margin: 0 auto;
+}
+
+#addPicturePage .edit-bar {
+  text-align: center;
+  margin: 16px 0;
 }
 </style>
