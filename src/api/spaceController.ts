@@ -2,12 +2,12 @@
 /* eslint-disable */
 import request from '@/request'
 
-/** addSpace POST /api/space */
+/** addSpace POST /api/space/add */
 export async function addSpaceUsingPost(
   body: API.SpaceAddRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.BaseResponseLong_>('/api/space', {
+  return request<API.BaseResponseLong_>('/api/space/add', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

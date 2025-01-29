@@ -1,16 +1,15 @@
 <template>
   <div id="addSpacePage">
     <h2 style="margin-bottom: 16px">
-      {{ route.query?.id ? '修改空间' : '创建空间' }}
+      {{ route.query?.id ? '修改' : '创建' }}{{ SPACE_TYPE_MAP[spaceType] }}
     </h2>
-
-    <a-form layout="vertical" :model="formData" @finish="handleSubmit">
+    <a-form name="spaceForm" layout="vertical" :model="spaceForm" @finish="handleSubmit">
       <a-form-item label="空间名称" name="spaceName">
-        <a-input v-model:value="formData.spaceName" placeholder="请输入空间名称" allow-clear />
+        <a-input v-model:value="spaceForm.spaceName" placeholder="请输入空间名称" allow-clear />
       </a-form-item>
       <a-form-item label="空间级别" name="spaceLevel">
         <a-select
-          v-model:value="formData.spaceLevel"
+          v-model:value="spaceForm.spaceLevel"
           :options="SPACE_LEVEL_OPTIONS"
           placeholder="请输入空间级别"
           style="min-width: 180px"
@@ -37,47 +36,54 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { SPACE_LEVEL_ENUM, SPACE_LEVEL_OPTIONS } from '@/constants/space'
+import { SPACE_LEVEL_ENUM, SPACE_LEVEL_OPTIONS, SPACE_TYPE_ENUM,SPACE_TYPE_MAP } from '@/constants/space'
 import {
   addSpaceUsingPost,
   getSpaceVoByIdUsingGet,
   listSpaceLevelUsingGet,
-  updateSpaceUsingPost
+  updateSpaceUsingPost,
 } from '@/api/spaceController'
 import { formatSize } from '@/utils'
 
 const space = ref<API.SpaceVO>()
-const spaceForm = reactive<API.SpaceAddRequest>({})
-const formData = reactive<API.SpaceAddRequest | API.SpaceUpdateRequest>({
+const spaceForm = reactive<API.SpaceAddRequest | API.SpaceUpdateRequest>({
   spaceName: '',
   spaceLevel: SPACE_LEVEL_ENUM.COMMON,
 })
+
+
 const loading = ref(false)
 const router = useRouter()
 const route = useRoute()
-
-
+// 空间类别
+const spaceType = computed(() => {
+  if (route.query?.type) {
+    return Number(route.query.type)
+  }
+  return SPACE_TYPE_ENUM.PRIVATE
+})
 /**
  * 提交表单
  * @param values
  */
 const handleSubmit = async (values: any) => {
-  const spaceId = oldSpace.value?.id
+  const spaceId = space.value?.id
   loading.value = true
   let res
   // 更新
   if (spaceId) {
     res = await updateSpaceUsingPost({
       id: spaceId,
-      ...formData,
+      ...spaceForm,
     })
   } else {
     // 创建
     res = await addSpaceUsingPost({
-      ...formData,
+      ...spaceForm,
+      spaceType: spaceType.value,
     })
   }
   if (res.data.code === 0 && res.data.data) {
@@ -91,7 +97,6 @@ const handleSubmit = async (values: any) => {
   }
   loading.value = false
 }
-
 
 const spaceLevelList = ref<API.SpaceLevel[]>([])
 
@@ -108,7 +113,6 @@ const fetchSpaceLevelList = async () => {
 onMounted(() => {
   fetchSpaceLevelList()
 })
-const oldSpace = ref<API.SpaceVO>()
 
 // 获取老数据
 const getOldSpace = async () => {
@@ -120,9 +124,9 @@ const getOldSpace = async () => {
     })
     if (res.data.code === 0 && res.data.data) {
       const data = res.data.data
-      oldSpace.value = data
-      formData.spaceName = data.spaceName
-      formData.spaceLevel = data.spaceLevel
+      space.value = data
+      spaceForm.spaceName = data.spaceName
+      spaceForm.spaceLevel = data.spaceLevel
     }
   }
 }
@@ -131,7 +135,6 @@ const getOldSpace = async () => {
 onMounted(() => {
   getOldSpace()
 })
-
 </script>
 
 <style scoped>
