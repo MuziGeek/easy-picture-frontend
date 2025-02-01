@@ -581,6 +581,11 @@ declare namespace API {
     pictureId?: number
   }
 
+  type PictureOperation = {
+    ids?: number[]
+    operationType?: number
+  }
+
   type PictureQueryRequest = {
     category?: string
     current?: number

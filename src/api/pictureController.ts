@@ -2,6 +2,21 @@
 /* eslint-disable */
 import request from '@/request'
 
+/** batchOperationPicture POST /api/picture/batchOption */
+export async function batchOperationPictureUsingPost(
+  body: API.PictureOperation,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/picture/batchOption', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** deletePicture POST /api/picture/delete */
 export async function deletePictureUsingPost(
   body: API.DeleteRequest,

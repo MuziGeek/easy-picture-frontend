@@ -22,6 +22,18 @@ export async function addUserSignInUsingPost(options?: { [key: string]: any }) {
   })
 }
 
+/** batchDeleteUser POST /api/user/batchDelete */
+export async function batchDeleteUserUsingPost(body: number[], options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean_>('/api/user/batchDelete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** changePassword POST /api/user/changePassword */
 export async function changePasswordUsingPost(
   body: API.UserModifyPassWord,
