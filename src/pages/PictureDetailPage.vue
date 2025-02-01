@@ -61,7 +61,7 @@
             </a-descriptions-item>
           </a-descriptions>
           <a-space wrap>
-            <a-button type="primary" ghost @click="doShare">
+            <a-button type="primary" ghost @click.stop="(e) => doShare(picture, e)">
               分享
               <template #icon>
                 <ShareAltOutlined />
@@ -79,7 +79,7 @@
                 <DeleteOutlined />
               </template>
             </a-button>
-            <a-button type="primary" @click="doDownload">
+            <a-button typpnpme="primary" @click="doDownload">
               免费下载
               <template #icon>
                 <DownloadOutlined />
@@ -89,7 +89,7 @@
         </a-card>
       </a-col>
     </a-row>
-    <ShareModal ref="shareModalRef" :link="shareLink" />
+    <ShareModal ref="shareModalRef" :link="shareLink" :imageUrl="shareImage" />
   </div>
 </template>
 
@@ -180,13 +180,19 @@ onMounted(() => {
 const shareModalRef = ref()
 // 分享链接
 const shareLink = ref<string>()
+const shareImage = ref<string>()
 
-// 分享
-const doShare = () => {
-  shareLink.value = `${window.location.protocol}//${window.location.host}/picture/${picture.value.id}`
-  if (shareModalRef.value) {
-    shareModalRef.value.openModal()
-  }
+
+
+// 处理分享
+const doShare = async (picture: API.PictureVO, e: Event) => {
+  e.stopPropagation()
+  // 设置分享链接
+  shareLink.value = `${window.location.origin}/picture/${picture.id}`
+  // 设置分享图片
+  shareImage.value = picture.url || picture.thumbnailUrl
+  // 打开分享模态框
+  shareModalRef.value?.openModal()
 }
 </script>
 

@@ -1,131 +1,98 @@
 <template>
-  <div class="mobile-picture-list">
-    <!-- 图片列表 -->
-    <a-list
-      :grid="{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 5, xxl: 6 }"
-      :data-source="dataList"
-      :loading="loading"
-    >
-      <template #renderItem="{ item: picture }">
-        <a-list-item class="picture-item">
-          <!-- 单张图片卡片 -->
-          <a-card class="picture-card" hoverable @click="doClickPicture(picture)">
-            <!-- 图片封面 -->
-            <template #cover>
+  <div class="waterfall-picture-list">
+    <!-- 根据设备类型显示不同布局 -->
+    <template v-if="!isMobile">
+      <!-- PC端瀑布流布局 -->
+      <div class="masonry-wrapper">
+        <div class="masonry-grid">
+          <!-- 使用计算后的列数据进行渲染 -->
+          <div v-for="(column, columnIndex) in columns" :key="columnIndex" class="masonry-column">
+            <div
+              v-for="picture in column"
+              :key="picture.id"
+              class="masonry-item"
+              @click="doClickPicture(picture)"
+            >
               <div class="image-wrapper">
-                <div class="image-container">
+                <div
+                  class="aspect-ratio-box"
+                  :style="{ paddingTop: `${(1 / (picture.picScale || 1)) * 100}%` }"
+                >
                   <img
                     :alt="picture.name"
-                    :src="`${picture.thumbnailUrl ?? picture.url}?${new Date().getTime()}`"
-                    @load="handleImageLoad(picture)"
+                    class="masonry-image"
+                    :src="picture.thumbnailUrl || picture.url"
+                    @load="handleImageLoad"
                     @error="handleImageError(picture)"
                   />
                 </div>
               </div>
-            </template>
-
-            <!-- 图片信息 -->
-            <a-card-meta :title="picture.name">
-              <template #description v-if="!showOp">
-                <div class="interaction-bar">
-                  <!-- 点赞按钮 -->
-                  <div class="action-item" @click="(e) => doLike(picture, e)">
-                    <van-icon
-                      class="action-icon"
-                      size="20"
-                      :name="picture.isLiked === 1 ? 'like' : 'like-o'"
-                      :color="picture.isLiked === 1 ? '#ff6b6b' : '#94a3b8'"
-                    />
-                    <span class="action-count">{{ formatNumber(picture.likeCount) }}</span>
-                  </div>
-
-                  <!-- 评论按钮 -->
-                  <div class="action-item" @click="(e) => doComments(picture, e)">
-                    <van-icon class="action-icon" size="20" name="chat-o" color="#94a3b8" />
-                    <span class="action-count">{{ formatNumber(picture.commentCount) }}</span>
-                  </div>
-
-                  <!-- 分享按钮 -->
-                  <div class="action-item" @click="(e) => doShare(picture, e)">
-                    <van-icon
-                      class="action-icon"
-                      size="20"
-                      name="share"
-                      :color="shareButtonColor[picture.id] || '#94a3b8'"
-                    />
-                    <span class="action-count">{{ formatNumber(picture.shareCount) }}</span>
+              <div class="picture-info">
+                <div class="picture-header">
+                  <div class="picture-user" @click.stop="handleUserClick(picture.user)">
+                    <a-avatar class="user-avatar" :src="picture.user?.userAvatar || getDefaultAvatar(picture.user?.userName)"/>
+                    <span>{{ picture.user?.userName }}</span>
                   </div>
                 </div>
-              </template>
-            </a-card-meta>
-
-            <!-- 操作按钮 -->
-            <template v-if="showOp" #actions>
-              <!-- 我的发布页面显示审核信息 -->
-              <div v-if="isMyPosts" class="review-status">
-                <a-button type="link" class="review-button" @click.stop="showReviewModal(picture)">
-                  <template v-if="picture.reviewStatus === 0">
-                    <ClockCircleOutlined class="status-icon pending" />
-                    <span class="status-text">待审核</span>
-                  </template>
-                  <template v-else-if="picture.reviewStatus === 1">
-                    <CheckCircleOutlined class="status-icon approved" />
-                    <span class="status-text">已通过</span>
-                  </template>
-                  <template v-else-if="picture.reviewStatus === 2">
-                    <CloseCircleOutlined class="status-icon rejected" />
-                    <span class="status-text">已拒绝</span>
-                  </template>
-                </a-button>
+                <div class="picture-title">{{ picture.name }}</div>
+                <div class="picture-actions">
+                  <div class="action-item" @click.stop="(e) => doLike(picture, e)">
+                    <LikeOutlined :class="{ active: picture.isLiked === 1 }" />
+                    <span>{{ formatNumber(picture.likeCount) }}</span>
+                  </div>
+                  <div class="action-item" @click.stop="(e) => doComments(picture, e)">
+                    <CommentOutlined />
+                    <span>{{ formatNumber(picture.commentCount) }}</span>
+                  </div>
+                  <div class="action-item" @click.stop="(e) => doShare(picture, e)">
+                    <ShareAltOutlined />
+                    <span>分享</span>
+                  </div>
+                </div>
               </div>
-              <!-- 其他页面显示操作按钮 -->
-              <div v-else class="operation-buttons">
-                <a-button
-                  v-if="canEdit"
-                  type="link"
-                  class="action-button edit-button"
-                  @click="(e) => doEdit(picture, e)"
-                >
-                  <EditOutlined />
-                </a-button>
-                <a-button
-                  type="link"
-                  class="action-button search-button"
-                  @click="(e) => doSearch(picture, e)"
-                >
-                  <SearchOutlined />
-                </a-button>
-                <a-button
-                  v-if="canDelete"
-                  type="link"
-                  class="action-button delete-button"
-                  @click="(e) => doDelete(picture, e)"
-                >
-                  <DeleteOutlined />
-                </a-button>
-              </div>
-            </template>
-          </a-card>
-        </a-list-item>
-      </template>
-    </a-list>
+            </div>
+          </div>
+        </div>
+        <!-- 加载状态 -->
+        <div v-if="loading" class="loading-more">
+          <a-spin />
+          <span>加载中...</span>
+        </div>
+        <!-- 没有更多数据 -->
+        <div v-if="isEndOfData" class="no-more-data">
+          <span>没有更多了</span>
+        </div>
+      </div>
+    </template>
 
     <!-- 分享模态框 -->
-    <ShareModal ref="shareModalRef" :link="shareLink" />
+    <ShareModal ref="shareModalRef" :link="shareLink" :imageUrl="shareImage" />
 
     <!-- 评论抽屉 -->
     <a-drawer
       class="comments-drawer"
       v-model:open="visible"
-      :placement="device === DEVICE_TYPE_ENUM.PC ? 'right' : 'bottom'"
+      placement="right"
       title="评论"
       :footer="false"
       @cancel="closeModal"
       :height="'80vh'"
-      :width="400"
     >
+      <!-- 修改宠物动画 -->
+      <div class="pet-animation">
+        <lottie-player
+          :src="currentPet.url"
+          background="transparent"
+          speed="1"
+          style="width: 120px; height: 120px;"
+          ref="petAnimation"
+          loop
+          autoplay
+        ></lottie-player>
+      </div>
+
       <!-- 修改这里，将点击事件限制在非输入区域 -->
-      <div class="drawer-content" ref="scrollContainer" @scroll="handleScroll">
+      <div class="drawer-content" ref="scrollContainer" >
         <div class="comments-area" @click="cancelReply">
           <!-- 加载中状态 -->
           <div v-if="commentloading" class="loading-container">
@@ -170,7 +137,7 @@
           />
 
           <a-input
-            v-model:value="newCommentContent"
+            v-model:value="commentContent"
             :placeholder="replyCommentId ? '写下你的回复...' : '写下你的评论...'"
             class="comment-input"
             :maxLength="200"
@@ -179,7 +146,7 @@
               <MessageOutlined class="reply-icon" />
             </template>
             <template #suffix>
-              <span class="word-count">{{ newCommentContent.length }}/200</span>
+              <span class="word-count">{{ commentContent.length }}/200</span>
             </template>
           </a-input>
 
@@ -187,7 +154,7 @@
             type="primary"
             class="send-button"
             :class="{ 'reply-button': replyCommentId }"
-            :disabled="!newCommentContent.trim()"
+            :disabled="!commentContent.trim()"
             @click="addComment"
           >
             {{ replyCommentId ? '回复' : '发送' }}
@@ -196,7 +163,11 @@
 
         <!-- 表情选择器 -->
         <div v-if="showEmojiPicker" class="emoji-picker-container">
-          <EmojiPicker @select="onEmojiSelect" :i18n="emojiI18n" class="custom-emoji-picker" />
+          <EmojiPicker
+            @select="onEmojiSelect"
+            :i18n="emojiI18n"
+            class="custom-emoji-picker"
+          />
         </div>
       </div>
     </a-drawer>
@@ -231,9 +202,9 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import ShareModal from '@/components/ShareModal.vue'
-import { h, onMounted, reactive, ref, nextTick, computed } from 'vue'
+import { h, onMounted, onUnmounted, reactive, ref, nextTick, computed, watch } from 'vue'
 import {
   DeleteOutlined,
   EditOutlined,
@@ -242,9 +213,12 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  ArrowRightOutlined,
   SmileOutlined,
   MessageOutlined,
+  ArrowRightOutlined,
+  LikeOutlined,
+  CommentOutlined,
+  ShareAltOutlined,
 } from '@ant-design/icons-vue'
 import { deletePictureUsingPost } from '@/api/pictureController.ts'
 import { message, Modal } from 'ant-design-vue'
@@ -253,33 +227,44 @@ import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import CommentList from '@/components/CommentList.vue'
 import { addCommentUsingPost, queryCommentUsingPost } from '@/api/commentsController.ts'
 import { throttle } from 'vant/es/lazyload/vue-lazyload/util'
-import PictureLikeRequest = API.PictureLikeRequest
-import { DEVICE_TYPE_ENUM } from '@/constants/device.ts'
-import { getDeviceType } from '@/utils/device.ts'
+// import EmojiPicker from "vue3-emoji-picker";
 import EmojiPicker from '@/components/EmojiPicker.vue'
+import { getDeviceType } from '@/utils/device'
+import { DEVICE_TYPE_ENUM } from '@/constants/device'
+import '@lottiefiles/lottie-player'
+
+import PictureLikeRequest = API.PictureLikeRequest
 
 const loginUserStore = useLoginUserStore()
 const currPicture = ref<API.PictureVO>()
 //回复评论id
 const replyCommentId = ref<string>('')
 
-// 添加设备类型检测
-const device = ref<string>('')
-
 onMounted(async () => {
-  device.value = await getDeviceType()
   replyCommentId.value = ''
   currPicture.value = props.dataList[0]
+  // console.log(props.dataList)
+  // 禁用页面初始滚动
+  document.body.style.overflowY = 'hidden'
+
+  // 等待图片初始化完成后再启用滚动
+  nextTick(() => {
+    setTimeout(() => {
+      document.body.style.overflowY = 'auto'
+      window.addEventListener('scroll', handleWindowScroll)
+    }, 500)  // 给予足够的时间让图片加载和布局稳定
+  })
 })
 
 interface Props {
-  dataList?: API.PictureVO[]
+  dataList: API.PictureVO[]
   loading?: boolean
   showOp?: boolean
   onReload?: () => void
   isMyPosts?: boolean
   canEdit?: boolean
   canDelete?: boolean
+  onLoadMore?: (page: number) => Promise<boolean>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -290,24 +275,31 @@ const props = withDefaults(defineProps<Props>(), {
   isMyPosts: false,
   canEdit: false,
   canDelete: false,
+  onLoadMore: undefined
 })
 
 const router = useRouter()
+
 const handleReplyClick = (commentId: string) => {
   // console.log('MobilePictureList - 回复被点击，评论 ID:', commentId)
   replyCommentId.value = commentId
 
-  // 强制更新输入框状态
-  nextTick(() => {
-    const inputEl = document.querySelector('.comment-input .ant-input') as HTMLInputElement
-    if (inputEl) {
+  // 更新输入框占位符
+  const inputEl = document.querySelector('.comment-input') as HTMLInputElement
+  if (inputEl) {
+    nextTick(() => {
       inputEl.focus()
       // 滚动到输入框位置
       inputEl.scrollIntoView({ behavior: 'smooth', block: 'end' })
-    }
-  })
+    })
+  }
 }
 
+// 获取默认头像
+const getDefaultAvatar = (userName: string) => {
+  const defaultName = userName || 'Guest'
+  return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(defaultName)}&backgroundColor=ffd5dc,ffdfbf,ffd5dc`
+}
 // 评论
 // 是否可见
 const visible = ref(false)
@@ -316,7 +308,7 @@ const visible = ref(false)
 const comments = ref<API.CommentsQueryRequest[]>([])
 
 // 存储用户输入的评论内容
-const newCommentContent = ref('')
+const commentContent = ref('')
 
 // 存储第一个评论列表数据
 const firstcomment = ref<API.CommentsQueryRequest[]>([])
@@ -357,12 +349,53 @@ const updateComments = async () => {
     commentloading.value = false
   }
 }
+// 宠物动画列表
+const PETS = [
+  {
+    name: 'dog',
+    url: 'https://assets5.lottiefiles.com/packages/lf20_syqnfe7c.json'
+  },
+  {
+    name: 'cat',
+    url: 'https://assets2.lottiefiles.com/packages/lf20_bkqn2x.json'
+  },
+  {
+    name: 'rabbit',
+    url: 'https://assets8.lottiefiles.com/packages/lf20_GofK09iPAE.json'
+  },
+  {
+    name: 'hamster',
+    url: 'https://assets4.lottiefiles.com/packages/lf20_yriifcqx.json'
+  },
+  {
+    name: 'bird',
+    url: 'https://assets3.lottiefiles.com/private_files/lf30_d5nmlcv1.json'
+  },
+  {
+    name: 'panda',
+    url: 'https://assets9.lottiefiles.com/packages/lf20_swnrn2oy.json'
+  },
+  {
+    name: 'penguin',
+    url: 'https://assets10.lottiefiles.com/packages/lf20_dw8rzsix.json'
+  },
+  {
+    name: 'fox',
+    url: 'https://assets1.lottiefiles.com/packages/lf20_zw7jo1.json'
+  }
+]
+
+// 当前宠物动画
+const currentPet = ref(PETS[Math.floor(Math.random() * PETS.length)])
+
 // 打开弹窗
 const doComments = async (picture, e) => {
   currPicture.value = picture
   queryRequest.pictureId = picture.id
   e.stopPropagation()
   visible.value = true
+  // 随机切换宠物
+  currentPet.value = PETS[Math.floor(Math.random() * PETS.length)]
   try {
     // 数据清理操作
     comments.value = [] // 先清空评论数据
@@ -387,32 +420,23 @@ const page = ref(1)
 const isEndOfData = ref(false)
 const isLoading = ref(false)
 
+// 预加载阈值和节流时间
+const SCROLL_THRESHOLD = 2000  // 更早开始预加载
+const THROTTLE_TIME = 500  // 减少节流时间，使滚动更平滑
+
 // 处理滚动事件
-const handleScroll = throttle(async (e: Event) => {
-  // console.log('滚动事件触发')
-  if (isLoading.value || isEndOfData.value) return
-  const target = e.target as HTMLElement
-  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 200) {
-    isLoading.value = true
-    try {
-      page.value++
-      queryRequest.current = page.value
-      const res = await queryCommentUsingPost(queryRequest)
-      if (res.data.code === 0 && res.data.data) {
-        const newData = res.data.data.records ?? []
-        comments.value = [...comments.value, ...newData]
-        isEndOfData.value = newData.length === 0
-        // console.log('newData:', newData)
-      } else {
-        message.error('获取数据失败，' + res.data.message)
-      }
-    } catch (error) {
-      console.error('加载更多评论异常', error)
-    } finally {
-      isLoading.value = false
-    }
+const handleWindowScroll = throttle(() => {
+  if (isLoading.value || isEndOfData.value || !props.onLoadMore) return
+
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  const windowHeight = window.innerHeight
+  const documentHeight = document.documentElement.scrollHeight
+
+  // 提前更多距离开始加载下一页
+  if (documentHeight - scrollTop - windowHeight < SCROLL_THRESHOLD) {
+    loadMore()
   }
-}, 1500)
+}, THROTTLE_TIME, { leading: true, trailing: true })
 
 // 关闭弹窗
 const closeModal = () => {
@@ -420,74 +444,83 @@ const closeModal = () => {
   visible.value = false
   // 数据清理操作
   firstcomment.value = []
-  newCommentContent.value = ''
+  commentContent.value = ''
   showFirstComment.value = false
   commentloading.value = false // 关闭加载状态
 }
 
-const requestBody: API.CommentsAddRequest = {
-  content: newCommentContent.value,
-  parentCommentId: 0, // 这里将 parentCommentId 设为 0，可根据需求修改
-  pictureId: 0,
-  userId: loginUserStore.loginUser.id,
-}
-// 添加评论
+// 添加宠物动画相关逻辑
+const petAnimation = ref(null)
+
+// 修改评论提交函数
 const addComment = async () => {
   try {
-    if (!newCommentContent.value.trim()) {
+    // 使用 commentContent 而不是 newCommentContent
+    if (!commentContent.value.trim()) {
       message.warning('评论内容不能为空')
       return
     }
 
+    // 确保 currPicture 存在
+    if (!currPicture.value?.id) {
+      message.error('图片信息获取失败')
+      return
+    }
+
     const requestBody: API.CommentsAddRequest = {
-      content: newCommentContent.value,
-      // 使用字符串形式传递 parentCommentId
-      parentCommentId: replyCommentId.value ? replyCommentId.value : '0',
+      content: commentContent.value.trim(),
+      // 使用 replyCommentId 而不是 replyToId
+      parentCommentId: replyCommentId.value || '0',
       pictureId: currPicture.value.id,
       userId: loginUserStore.loginUser.id,
     }
 
-    // console.log('发送评论请求体:', requestBody) // 添加日志
+    // console.log('发送评论请求体:', requestBody)
 
     const res = await addCommentUsingPost(requestBody)
     if (res.data.code === 0) {
       message.success('评论成功')
-      newCommentContent.value = ''
+      // 播放宠物庆祝动画
+      if (petAnimation.value) {
+        petAnimation.value.play()
+      }
+      // 清空输入内容和状态
+      commentContent.value = ''
       replyCommentId.value = ''
+      showEmojiPicker.value = false
 
       // 刷新评论列表
       queryRequest.current = 1
       page.value = 1
       isEndOfData.value = false
       await updateComments()
+    } else {
+      message.error('评论失败：' + res.data.message)
     }
   } catch (error) {
-    console.error('添加评论失败，请求体:', requestBody, '错误:', error)
+    console.error('评论失败:', error)
     message.error('评论失败，请稍后重试')
   }
 }
 
-// 处理图片加载完成事件，根据宽高比设置行内样式
-const handleImageLoad = (picture: API.PictureVO) => {
+// 修改图片加载处理函数
+const handleImageLoad = (event: Event) => {
   const imgElement = event.target as HTMLImageElement
-  const width = imgElement.width
-  const ratio = picture.picScale
-  if (ratio && ratio > 0.58) {
-    imgElement.style.width = '100%'
-    imgElement.style.height = '100%'
-    imgElement.style.objectFit = 'cover'
-  } else if (ratio) {
-    imgElement.style.width = '100%'
-    imgElement.style.height = `${width * 1.78}px`
-    imgElement.style.objectFit = 'cover'
-    imgElement.style.objectPosition = 'center'
+  if (imgElement) {
+    // 设置一个短暂的延时，确保图片完全加载
+    setTimeout(() => {
+      imgElement.style.opacity = '1'
+    }, 50)
   }
 }
 
 // 跳转至图片详情页
 const doClickPicture = (picture: API.PictureVO) => {
   router.push({
-    path: `/picture/${picture.id}`,
+    name: '图片详情',
+    params: {
+      id: picture.id
+    }
   })
 }
 
@@ -540,10 +573,12 @@ const doDelete = async (picture, e) => {
   })
 }
 
-// 处理图片加载错误的函数
+// 修改图片错误处理函数
 const handleImageError = (picture: API.PictureVO) => {
   const imgElement = event.target as HTMLImageElement
-  imgElement.src = picture.url // 将图片src替换为picture.url
+  if (imgElement && picture.url) {
+    imgElement.src = picture.url
+  }
 }
 
 // 点赞操作
@@ -572,32 +607,20 @@ const doLike = async (picture, e) => {
 
 // 分享操作相关变量
 const shareModalRef = ref()
-const shareLink = ref<string>()
+const shareLink = ref<string>('')
+const shareImage = ref('')
 // 用于存储每个分享按钮的颜色，以图片id作为键
 const shareButtonColor = ref<{ [key: string]: string }>({})
 
-// 分享
-const doShare = async (picture, e) => {
+// 处理分享
+const doShare = async (picture: PictureVO, e: Event) => {
   e.stopPropagation()
-  const params: API.UserShareUsingPOSTParams = {
-    pictureId: picture.id,
-  }
-  try {
-    const res = await userShareUsingPost(params)
-    if (res.data.code === 0) {
-      picture.shareCount++
-      shareLink.value = `${window.location.protocol}//${window.location.host}/picture/${picture.id}`
-      if (shareModalRef.value) {
-        shareModalRef.value.openModal()
-      }
-      // 设置分享按钮点击后的颜色为蓝色
-      shareButtonColor.value[picture.id] = '#60c3d5'
-      // 设置分享按钮点击后的颜色为蓝色
-      shareButtonColor.value[picture.id] = '#60c3d5'
-    }
-  } catch (error) {
-    message.error('分享异常')
-  }
+  // 设置分享链接
+  shareLink.value = `${window.location.origin}/picture/${picture.id}`
+  // 设置分享图片
+  shareImage.value = picture.url || picture.thumbnailUrl
+  // 打开分享模态框
+  shareModalRef.value?.openModal()
 }
 // 格式化数字的函数，将较大数字转换为带k、w的格式，保留两位小数
 const formatNumber = (num: number): string => {
@@ -611,12 +634,39 @@ const formatNumber = (num: number): string => {
   return num.toString()
 }
 
-// 取消回复状态
+// 取消回复
 const cancelReply = () => {
-  if (replyCommentId.value) {
-    replyCommentId.value = ''
-  }
+  replyCommentId.value = ''
 }
+
+// 处理返回键
+const handleBackButton = () => {
+  if (visible.value) {
+    visible.value = false
+    return true
+  }
+  return false
+}
+
+// 监听返回键
+onMounted(() => {
+  window.addEventListener('popstate', () => {
+    if (handleBackButton()) {
+      // 阻止默认的返回行为
+      history.pushState(null, '', document.URL)
+    }
+  })
+
+  // 初始化时添加一个历史记录，用于触发 popstate
+  history.pushState(null, '', document.URL)
+})
+
+// 清理监听器
+onUnmounted(() => {
+  window.removeEventListener('popstate', handleBackButton)
+  window.removeEventListener('scroll', handleWindowScroll)
+  document.body.style.overflowY = 'auto'
+})
 
 // 审核弹窗相关
 const reviewModalVisible = ref(false)
@@ -640,6 +690,7 @@ const getReviewModalTitle = (status?: number) => {
   }
 }
 
+// 评论相关状态
 // 表情选择器相关
 const showEmojiPicker = ref(false)
 
@@ -648,12 +699,179 @@ const toggleEmojiPicker = () => {
 }
 
 const onEmojiSelect = (emoji: string) => {
-  newCommentContent.value += emoji
+  commentContent.value += emoji
 }
+
+// 回车提交评论
+const handleEnterPress = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    submitComment()
+  }
+}
+
+// 处理回复评论
+const handleReply = (commentId: string) => {
+  replyToId.value = commentId
+  // 聚焦输入框
+  const input = document.querySelector('.comment-input')
+  if (input) {
+    (input as HTMLElement).focus()
+  }
+}
+
+// 暴露方法给父组件
+defineExpose({
+  handleReply
+})
+
+// 表情选择器国际化配置
+const emojiI18n = {
+  categories: {
+    recent: '最近使用',
+    smileys: '表情符号',
+    people: '人物',
+    animals: '动物与自然',
+    food: '食物与饮料',
+    activities: '活动',
+    travel: '旅行与地点',
+    objects: '物品',
+    symbols: '符号',
+    flags: '旗帜'
+  },
+  search: '搜索表情',
+  clear: '清除',
+  notFound: '未找到表情'
+}
+
+// 判断是否为移动端
+const isMobile = ref(getDeviceType() === DEVICE_TYPE_ENUM.MOBILE)
+
+// 处理用户点击
+const handleUserClick = (user) => {
+  if (!user) return
+  router.push({
+    path: `/user/${user.id}`,
+    query: {
+      userName: user.userName,
+      userAvatar: user.userAvatar,
+      userAccount: user.userAccount,
+      userProfile: user.userProfile,
+      userRole: user.userRole,
+      createTime: user.createTime
+    }
+  })
+}
+
+// 滚动加载相关变量
+const currentPage = ref(1)
+
+// 加载更多数据
+const loadMore = async () => {
+  if (isLoading.value || isEndOfData.value || !props.onLoadMore) return
+  isLoading.value = true
+
+  const startTime = Date.now()
+
+  try {
+    const hasMore = await props.onLoadMore(currentPage.value + 1)
+    if (hasMore) {
+      currentPage.value++
+    } else {
+      isEndOfData.value = true
+    }
+  } catch (error) {
+    console.error('加载更多数据失败:', error)
+  } finally {
+    // 确保加载状态至少显示一定时间
+    const loadTime = Date.now() - startTime
+    const minLoadTime = 300  // 减少最小加载时间
+    if (loadTime < minLoadTime) {
+      await new Promise(resolve => setTimeout(resolve, minLoadTime - loadTime))
+    }
+    isLoading.value = false
+  }
+}
+
+// 监听滚动事件
+onMounted(() => {
+  window.addEventListener('scroll', handleWindowScroll)
+})
+
+// 组件卸载时移除滚动监听
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleWindowScroll)
+})
+
+// 监听数据列表变化，重置状态
+watch(() => props.dataList, (newVal, oldVal) => {
+  // 只在数据完全重置时重置状态
+  if (oldVal?.length && newVal.length === 0) {
+    currentPage.value = 1
+    isEndOfData.value = false
+    isLoading.value = false
+    // 重置时也暂时禁用滚动
+    document.body.style.overflowY = 'hidden'
+    nextTick(() => {
+      setTimeout(() => {
+        document.body.style.overflowY = 'auto'
+      }, 300)
+    })
+  }
+})
+
+// 计算列数
+const getColumnCount = () => {
+  const width = window.innerWidth
+  if (width > 1920) return 8
+  if (width > 1600) return 7
+  if (width > 1400) return 6
+  if (width > 1200) return 5
+  if (width > 900) return 4
+  return 3
+}
+
+// 计算分列数据
+const columns = computed(() => {
+  const columnCount = getColumnCount()
+  const cols: API.PictureVO[][] = Array.from({ length: columnCount }, () => [])
+
+  // 按照从左到右、从上到下的顺序分配数据
+  props.dataList.forEach((item, index) => {
+    const columnIndex = index % columnCount
+    cols[columnIndex].push(item)
+  })
+
+  return cols
+})
+
+// 监听窗口大小变化
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
+
+const handleResize = throttle(() => {
+  // 触发重新计算列
+  columns.value = computed(() => {
+    const columnCount = getColumnCount()
+    const cols: API.PictureVO[][] = Array.from({ length: columnCount }, () => [])
+
+    props.dataList.forEach((item, index) => {
+      const columnIndex = index % columnCount
+      cols[columnIndex].push(item)
+    })
+
+    return cols
+  }).value
+}, 200)
 </script>
 
 <style scoped>
-.mobile-picture-list {
+.waterfall-picture-list {
   padding: 4px;
   width: 100%;
   margin: 0 auto;
@@ -700,33 +918,28 @@ const onEmojiSelect = (emoji: string) => {
 .image-wrapper {
   position: relative;
   width: 100%;
-  padding-top: 66%; /* 修改为 75% 来实现 4:3 的宽高比 */
-  background: #f8fafc;
-  border-radius: 12px 12px 0 0;
   overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  background: #f5f5f5;
 }
 
-.image-container {
+.aspect-ratio-box {
+  position: relative;
+  width: 100%;
+  height: 0;
+  background: #f5f5f5;
+}
+
+.masonry-image {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.image-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* 保持图片比例并填充容器 */
-  transition: transform 0.3s ease;
-}
-
-.picture-card:hover .image-container img {
-  transform: scale(1.05);
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  will-change: opacity;
 }
 
 .interaction-bar {
@@ -759,60 +972,19 @@ const onEmojiSelect = (emoji: string) => {
 .operation-buttons {
   display: flex;
   justify-content: space-around;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.8);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.action-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-
-  .anticon {
-    font-size: 16px;
-  }
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.02);
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
+  padding: 0 12px;
 }
 
 .edit-button {
   color: #ff8e53;
-
-  &:hover {
-    color: #ff7a3d;
-    background: rgba(255, 142, 83, 0.1);
-  }
 }
 
 .search-button {
   color: #45b090;
-
-  &:hover {
-    color: #3a9579;
-    background: rgba(69, 176, 144, 0.1);
-  }
 }
 
 .delete-button {
   color: #ff6b6b;
-
-  &:hover {
-    color: #ff5252;
-    background: rgba(255, 107, 107, 0.1);
-  }
 }
 
 /* 评论抽屉样式 */
@@ -1109,4 +1281,215 @@ const onEmojiSelect = (emoji: string) => {
     font-size: 14px;
   }
 }
+
+/* PC端瀑布流样式 */
+.masonry-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;  /* 移除内边距 */
+}
+
+.masonry-grid {
+  display: flex;
+  gap: 12px;  /* 减小列间距 */
+  width: 100%;
+  padding: 0;  /* 移除内边距 */
+  margin: 0;   /* 移除外边距 */
+}
+
+.masonry-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;  /* 减小行间距 */
+  min-width: 0;
+}
+
+.masonry-item {
+  width: 100%;
+  margin: 0;  /* 移除外边距 */
+  break-inside: avoid;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  background: #f5f5f5;
+}
+
+.aspect-ratio-box {
+  position: relative;
+  width: 100%;
+  height: 0;
+  background: #f5f5f5;
+}
+
+.masonry-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  will-change: opacity;
+}
+
+.picture-info {
+  padding: 12px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.03) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.picture-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.picture-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+
+  &:hover {
+    color: #ff8e53;
+  }
+}
+
+.picture-title {
+  font-size: 14px;
+  color: #333;
+  margin: 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.picture-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+
+  .action-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      color: #ff8e53;
+    }
+
+    .anticon {
+      font-size: 16px;
+    }
+
+    span {
+      font-size: 12px;
+    }
+
+    .active {
+      color: #ff8e53;
+    }
+  }
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+  color: #666;
+  font-size: 14px;
+  gap: 8px;
+}
+
+.no-more-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 0;
+  color: #999;
+  font-size: 14px;
+  gap: 8px;
+}
+
+/* 优化宠物动画样式 */
+.pet-animation {
+  position: fixed;
+  right: 20px;
+  bottom: 100px;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: scale(0.8);
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease;  /* 添加淡入动画 */
+}
+
+/* 当评论抽屉打开时的动画效果 */
+.comments-drawer:deep(.ant-drawer-content-wrapper) {
+  .pet-animation {
+    animation: bounce 1s ease infinite;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(0.8) translateY(0);
+  }
+  50% {
+    transform: scale(0.8) translateY(-10px);
+  }
+}
+
+/* 添加淡入动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0.9;
+    transform: scale(0.8);
+  }
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .pet-animation {
+    right: 10px;
+    bottom: 80px;
+    transform: scale(0.6);
+  }
+}
 </style>
+

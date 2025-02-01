@@ -47,6 +47,21 @@ export async function editPictureByBatchUsingPost(
   })
 }
 
+/** getFollowPicture POST /api/picture/follow */
+export async function getFollowPictureUsingPost(
+  body: API.PictureQueryRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponsePagePictureVO_>('/api/picture/follow', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** getPictureById GET /api/picture/get */
 export async function getPictureByIdUsingGet(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -207,6 +222,20 @@ export async function searchPictureByPictureUsingPost(
 export async function listPictureTagCategoryUsingGet(options?: { [key: string]: any }) {
   return request<API.BaseResponsePictureTagCategory_>('/api/picture/tag_category', {
     method: 'GET',
+    ...(options || {}),
+  })
+}
+
+/** getTop100Picture GET /api/picture/top100/${param0} */
+export async function getTop100PictureUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getTop100PictureUsingGETParams,
+  options?: { [key: string]: any }
+) {
+  const { id: param0, ...queryParams } = params
+  return request<API.BaseResponseListPictureVO_>(`/api/picture/top100/${param0}`, {
+    method: 'GET',
+    params: { ...queryParams },
     ...(options || {}),
   })
 }

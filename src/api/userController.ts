@@ -14,12 +14,65 @@ export async function addUserUsingPost(body: API.UserAddRequest, options?: { [ke
   })
 }
 
+/** addUserSignIn POST /api/user/add/sign_in */
+export async function addUserSignInUsingPost(options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean_>('/api/user/add/sign_in', {
+    method: 'POST',
+    ...(options || {}),
+  })
+}
+
+/** changePassword POST /api/user/changePassword */
+export async function changePasswordUsingPost(
+  body: API.UserModifyPassWord,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/changePassword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** deleteUser POST /api/user/delete */
 export async function deleteUserUsingPost(
   body: API.DeleteRequest,
   options?: { [key: string]: any }
 ) {
   return request<API.BaseResponseBoolean_>('/api/user/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** deleteBatchUser POST /api/user/delete/batch */
+export async function deleteBatchUserUsingPost(
+  body: API.DeleteRequest[],
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/delete/batch', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** userDestroy POST /api/user/destroy */
+export async function userDestroyUsingPost(
+  body: API.DeleteRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/destroy', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -52,6 +105,21 @@ export async function getLoginUserUsingGet(options?: { [key: string]: any }) {
   })
 }
 
+/** getUserSignInRecord GET /api/user/get/sign_in */
+export async function getUserSignInRecordUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getUserSignInRecordUsingGETParams,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseListInt_>('/api/user/get/sign_in', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  })
+}
+
 /** getUserVOById GET /api/user/get/vo */
 export async function getUserVoByIdUsingGet(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
@@ -63,6 +131,14 @@ export async function getUserVoByIdUsingGet(
     params: {
       ...params,
     },
+    ...(options || {}),
+  })
+}
+
+/** getCode GET /api/user/getcode */
+export async function getCodeUsingGet(options?: { [key: string]: any }) {
+  return request<API.BaseResponseMapStringString_>('/api/user/getcode', {
+    method: 'GET',
     ...(options || {}),
   })
 }
@@ -131,6 +207,47 @@ export async function updateUserUsingPost(
       'Content-Type': 'application/json',
     },
     data: body,
+    ...(options || {}),
+  })
+}
+
+/** updateUserAvatar POST /api/user/update/avatar */
+export async function updateUserAvatarUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.updateUserAvatarUsingPOSTParams,
+  body: {},
+  multipartFile?: File,
+  options?: { [key: string]: any }
+) {
+  const formData = new FormData()
+
+  if (multipartFile) {
+    formData.append('multipartFile', multipartFile)
+  }
+
+  Object.keys(body).forEach((ele) => {
+    const item = (body as any)[ele]
+
+    if (item !== undefined && item !== null) {
+      if (typeof item === 'object' && !(item instanceof File)) {
+        if (item instanceof Array) {
+          item.forEach((f) => formData.append(ele, f || ''))
+        } else {
+          formData.append(ele, JSON.stringify(item))
+        }
+      } else {
+        formData.append(ele, item)
+      }
+    }
+  })
+
+  return request<API.BaseResponseString_>('/api/user/update/avatar', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
+    data: formData,
+    requestType: 'form',
     ...(options || {}),
   })
 }

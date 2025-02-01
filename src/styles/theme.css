@@ -1,0 +1,339 @@
+:root {
+    --text-color-light: rgba(0, 0, 0, 0.85);
+    --text-color-dark: rgba(255, 255, 255, 0.85);
+    --background-color-light: #ffffff;
+    --background-color-dark: #141414;
+    --component-background-dark: #1f1f1f;
+    --border-color-dark: #303030;
+    --border-color-light: #f0f0f0;
+  }
+  
+  /* 全局过渡效果 */
+  * {
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+  }
+  
+  /* 亮色主题 - 默认样式 */
+  body {
+    background-color: var(--background-color-light);
+    color: var(--text-color-light);
+  }
+  
+  /* 暗色主题 - 全局背景和文字 */
+  body[data-theme='dark'] {
+    background-color: var(--background-color-dark);
+    color: var(--text-color-dark);
+  }
+  
+  /* Layout 组件样式 */
+  body[data-theme='dark'] .ant-layout {
+    background: var(--background-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-layout-sider {
+    background: var(--component-background-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-layout-header {
+    background: var(--component-background-dark) !important;
+    border-bottom: 1px solid var(--border-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-layout-content {
+    background: var(--background-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-layout-footer {
+    background: var(--component-background-dark) !important;
+  }
+  
+  /* 菜单样式 */
+  body[data-theme='dark'] .ant-menu {
+    background: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 内容区域的卡片和容器 */
+  body[data-theme='dark'] .ant-card,
+  body[data-theme='dark'] .ant-list,
+  body[data-theme='dark'] .ant-table,
+  body[data-theme='dark'] .ant-descriptions,
+  body[data-theme='dark'] .ant-modal-content,
+  body[data-theme='dark'] .ant-drawer-content,
+  body[data-theme='dark'] .ant-collapse,
+  body[data-theme='dark'] .ant-tabs-content {
+    background: var(--component-background-dark) !important;
+    border-color: var(--border-color-dark) !important;
+  }
+  
+  /* 表单控件 */
+  body[data-theme='dark'] .ant-input,
+  body[data-theme='dark'] .ant-input-number,
+  body[data-theme='dark'] .ant-select-selector,
+  body[data-theme='dark'] .ant-picker,
+  body[data-theme='dark'] .ant-input-affix-wrapper,
+  body[data-theme='dark'] .ant-btn:not(.ant-btn-primary) {
+    background: var(--component-background-dark) !important;
+    border-color: var(--border-color-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 下拉菜单 */
+  body[data-theme='dark'] .ant-select-dropdown,
+  body[data-theme='dark'] .ant-dropdown-menu,
+  body[data-theme='dark'] .ant-picker-dropdown {
+    background: var(--component-background-dark) !important;
+  }
+  
+  /* 表格样式 */
+  body[data-theme='dark'] .ant-table {
+    background: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 表格头部 */
+  body[data-theme='dark'] .ant-table-thead > tr > th {
+    background: var(--background-color-dark) !important;
+    border-color: var(--border-color-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 表格内容 */
+  body[data-theme='dark'] .ant-table-tbody > tr > td {
+    background: var(--component-background-dark) !important;
+    border-color: var(--border-color-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 表格行hover效果 */
+  body[data-theme='dark'] .ant-table-tbody > tr:hover > td {
+    background: rgba(255, 255, 255, 0.08) !important;
+  }
+  
+  /* 表格行选中效果 */
+  body[data-theme='dark'] .ant-table-tbody > tr.ant-table-row-selected > td {
+    background: rgba(24, 144, 255, 0.1) !important;
+  }
+  
+  /* 表格边框 */
+  body[data-theme='dark'] .ant-table-container {
+    border-color: var(--border-color-dark) !important;
+  }
+  
+  /* 表格分页器 */
+  body[data-theme='dark'] .ant-pagination {
+    background: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-pagination-item {
+    background: var(--component-background-dark) !important;
+    border-color: var(--border-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-pagination-item-active {
+    border-color: #1890ff !important;
+  }
+  
+  /* 表格空状态 */
+  body[data-theme='dark'] .ant-table-placeholder {
+    background: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 表格固定列阴影 */
+  body[data-theme='dark'] .ant-table-cell-fix-left-last::after,
+  body[data-theme='dark'] .ant-table-cell-fix-right-first::after {
+    box-shadow: inset 10px 0 8px -8px rgba(0, 0, 0, 0.45) !important;
+  }
+  
+  /* 表格展开行 */
+  body[data-theme='dark'] .ant-table-expanded-row > td {
+    background: var(--background-color-dark) !important;
+  }
+  
+  /* 表格筛选下拉菜单 */
+  body[data-theme='dark'] .ant-table-filter-dropdown {
+    background: var(--component-background-dark) !important;
+  }
+  
+  /* 表格排序和筛选图标 */
+  body[data-theme='dark'] .ant-table-column-sorter-up,
+  body[data-theme='dark'] .ant-table-column-sorter-down,
+  body[data-theme='dark'] .ant-table-filter-trigger {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+  
+  body[data-theme='dark'] .ant-table-column-sorter-up.active,
+  body[data-theme='dark'] .ant-table-column-sorter-down.active {
+    color: #1890ff !important;
+  }
+  
+  /* 分割线 */
+  body[data-theme='dark'] .ant-divider {
+    border-color: var(--border-color-dark) !important;
+  }
+  
+  /* 特殊组件处理 */
+  body[data-theme='dark'] .ant-btn-primary {
+    color: #fff !important;
+  }
+  
+  body[data-theme='dark'] .ant-menu-item-selected {
+    color: #1890ff !important;
+  }
+  
+  /* 链接颜色 */
+  body[data-theme='dark'] a:not(.ant-menu-item) {
+    color: #1890ff !important;
+  }
+  
+  /* 滚动条样式 */
+  body[data-theme='dark'] ::-webkit-scrollbar {
+    background-color: var(--background-color-dark);
+  }
+  
+  body[data-theme='dark'] ::-webkit-scrollbar-thumb {
+    background-color: #434343;
+  }
+  
+  /* 确保所有容器背景色 */
+  body[data-theme='dark'] div {
+    background-color: inherit;
+  }
+  
+  /* 页面内容区域的容器 */
+  body[data-theme='dark'] .page-container,
+  body[data-theme='dark'] .content-wrapper,
+  body[data-theme='dark'] .main-content {
+    background: var(--background-color-dark) !important;
+  }
+  
+  /* 确保所有列表项背景色 */
+  body[data-theme='dark'] .ant-list-item {
+    background: var(--component-background-dark) !important;
+  }
+  
+  /* 弹出层背景 */
+  body[data-theme='dark'] .ant-modal-content,
+  body[data-theme='dark'] .ant-drawer-content {
+    background: var(--component-background-dark) !important;
+  }
+  
+  /* 确保图片容器背景色 */
+  body[data-theme='dark'] .image-container,
+  body[data-theme='dark'] .photo-container {
+    background: var(--component-background-dark) !important;
+  }
+  
+  /* 侧边栏样式 */
+  body[data-theme='dark'] .ant-layout-sider,
+  body[data-theme='dark'] .sider {
+    background-color: var(--component-background-dark) !important;
+    border-right: 1px solid var(--border-color-dark) !important;
+  }
+  
+  /* 侧边菜单样式 */
+  body[data-theme='dark'] .ant-menu,
+  body[data-theme='dark'] .ant-menu-sub {
+    background-color: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-menu-item {
+    color: var(--text-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  
+  /* 表格容器样式 */
+  body[data-theme='dark'] .ant-table-wrapper {
+    background-color: var(--component-background-dark) !important;
+  }
+  
+  /* 表格整体样式 */
+  body[data-theme='dark'] .ant-table {
+    background-color: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 表格头部 */
+  body[data-theme='dark'] .ant-table-thead > tr > th {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    color: var(--text-color-dark) !important;
+    border-bottom: 1px solid var(--border-color-dark) !important;
+  }
+  
+  /* 表格单元格 */
+  body[data-theme='dark'] .ant-table-tbody > tr > td {
+    background-color: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+    border-bottom: 1px solid var(--border-color-dark) !important;
+  }
+  
+  /* 表格行悬停效果 */
+  body[data-theme='dark'] .ant-table-tbody > tr:hover > td {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  
+  /* 表格奇偶行样式 */
+  body[data-theme='dark'] .ant-table-tbody > tr:nth-child(odd) > td {
+    background-color: var(--component-background-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-table-tbody > tr:nth-child(even) > td {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+  }
+  
+  /* 表格边框 */
+  body[data-theme='dark'] .ant-table,
+  body[data-theme='dark'] .ant-table-container {
+    border: 1px solid var(--border-color-dark) !important;
+  }
+  
+  /* 搜索框和下拉菜单 */
+  body[data-theme='dark'] .ant-input,
+  body[data-theme='dark'] .ant-select-selector,
+  body[data-theme='dark'] .ant-select-dropdown {
+    background-color: var(--component-background-dark) !important;
+    color: var(--text-color-dark) !important;
+    border-color: var(--border-color-dark) !important;
+  }
+  
+  /* 按钮样式 */
+  body[data-theme='dark'] .ant-btn:not(.ant-btn-primary) {
+    background-color: var(--component-background-dark) !important;
+    border-color: var(--border-color-dark) !important;
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 分页器样式 */
+  body[data-theme='dark'] .ant-pagination {
+    background-color: var(--component-background-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-pagination-item {
+    background-color: var(--component-background-dark) !important;
+    border-color: var(--border-color-dark) !important;
+  }
+  
+  body[data-theme='dark'] .ant-pagination-item a {
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 操作列的链接颜色 */
+  body[data-theme='dark'] .ant-table-tbody > tr > td a {
+    color: #1890ff !important;
+  }
+  
+  /* 确保所有图标颜色正确 */
+  body[data-theme='dark'] .anticon {
+    color: var(--text-color-dark) !important;
+  }
+  
+  /* 确保页面容器背景色 */
+  body[data-theme='dark'] .ant-layout-content > div {
+    background-color: var(--background-color-dark) !important;
+  }

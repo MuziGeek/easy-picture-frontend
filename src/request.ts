@@ -1,5 +1,7 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
+import { useLoginUserStore } from '@/stores/useLoginUserStore'
+import { ref } from 'vue'
 
 // 创建 Axios 实例
 const myAxios = axios.create({
@@ -7,10 +9,15 @@ const myAxios = axios.create({
   timeout: 60000,
   withCredentials: true,
 })
+const loginUser = ref<API.LoginUserVO>()
 
 // 全局请求拦截器
 myAxios.interceptors.request.use(
   function (config) {
+    // 请求头添加token
+    if (loginUser.tokenName && loginUser.tokenValue) {
+      config.headers[`${loginUser.tokenName}`] = loginUser.tokenValue
+    }
     // Do something before request is sent
     return config
   },

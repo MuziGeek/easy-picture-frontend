@@ -13,14 +13,12 @@
             <!-- 图片封面 -->
             <template #cover>
               <div class="image-wrapper">
-                <div class="image-container">
-                  <img
-                    :alt="picture.name"
-                    :src="`${picture.thumbnailUrl ?? picture.url}?${new Date().getTime()}`"
-                    @load="handleImageLoad(picture)"
-                    @error="handleImageError(picture)"
-                  />
-                </div>
+                <img
+                  :alt="picture.name"
+                  :src="`${picture.thumbnailUrl ?? picture.url}?${new Date().getTime()}`"
+                  @load="handleImageLoad(picture)"
+                  @error="handleImageError(picture)"
+                />
               </div>
             </template>
 
@@ -28,6 +26,12 @@
             <a-card-meta :title="picture.name">
               <template #description v-if="!showOp">
                 <div class="interaction-bar">
+                  <div class="picture-header">
+                    <div class="picture-user" @click.stop="handleUserClick(picture.user)">
+                      <a-avatar class="user-avatar" :src="picture.user?.userAvatar || getDefaultAvatar(picture.user?.userName)"/>
+                      <span>{{ picture.user?.userName }}</span>
+                    </div>
+                  </div>
                   <!-- 点赞按钮 -->
                   <div class="action-item" @click="(e) => doLike(picture, e)">
                     <van-icon
@@ -81,27 +85,26 @@
               <!-- 其他页面显示操作按钮 -->
               <div v-else class="operation-buttons">
                 <a-button
-                  v-if="canEdit"
                   type="link"
-                  class="action-button edit-button"
+                  v-if="canEdit"
+                  class="edit-button"
                   @click="(e) => doEdit(picture, e)"
                 >
-                  <EditOutlined />
+                  <template #icon><EditOutlined /></template>
+                  编辑
+                </a-button>
+                <a-button type="link" class="search-button" @click="(e) => doSearch(picture, e)">
+                  <template #icon><SearchOutlined /></template>
+                  搜相似
                 </a-button>
                 <a-button
                   type="link"
-                  class="action-button search-button"
-                  @click="(e) => doSearch(picture, e)"
-                >
-                  <SearchOutlined />
-                </a-button>
-                <a-button
                   v-if="canDelete"
-                  type="link"
-                  class="action-button delete-button"
+                  class="delete-button"
                   @click="(e) => doDelete(picture, e)"
                 >
-                  <DeleteOutlined />
+                  <template #icon><DeleteOutlined /></template>
+                  删除
                 </a-button>
               </div>
             </template>
@@ -111,19 +114,31 @@
     </a-list>
 
     <!-- 分享模态框 -->
-    <ShareModal ref="shareModalRef" :link="shareLink" />
+    <ShareModal ref="shareModalRef" :link="shareLink" :imageUrl="shareImage" />
 
     <!-- 评论抽屉 -->
     <a-drawer
       class="comments-drawer"
       v-model:open="visible"
-      :placement="device === DEVICE_TYPE_ENUM.PC ? 'right' : 'bottom'"
+      placement="bottom"
       title="评论"
       :footer="false"
       @cancel="closeModal"
       :height="'80vh'"
-      :width="400"
     >
+      <!-- 添加宠物动画 -->
+      <div class="pet-animation">
+        <lottie-player
+          :src="currentPet.url"
+          background="transparent"
+          speed="1"
+          style="width: 120px; height: 120px;"
+          ref="petAnimation"
+          loop
+          autoplay
+        ></lottie-player>
+      </div>
+
       <!-- 修改这里，将点击事件限制在非输入区域 -->
       <div class="drawer-content" ref="scrollContainer" @scroll="handleScroll">
         <div class="comments-area" @click="cancelReply">
@@ -170,7 +185,7 @@
           />
 
           <a-input
-            v-model:value="newCommentContent"
+            v-model:value="commentContent"
             :placeholder="replyCommentId ? '写下你的回复...' : '写下你的评论...'"
             class="comment-input"
             :maxLength="200"
@@ -179,7 +194,7 @@
               <MessageOutlined class="reply-icon" />
             </template>
             <template #suffix>
-              <span class="word-count">{{ newCommentContent.length }}/200</span>
+              <span class="word-count">{{ commentContent.length }}/200</span>
             </template>
           </a-input>
 
@@ -187,7 +202,7 @@
             type="primary"
             class="send-button"
             :class="{ 'reply-button': replyCommentId }"
-            :disabled="!newCommentContent.trim()"
+            :disabled="!commentContent.trim()"
             @click="addComment"
           >
             {{ replyCommentId ? '回复' : '发送' }}
@@ -195,8 +210,13 @@
         </div>
 
         <!-- 表情选择器 -->
+        <!-- 表情选择器 -->
         <div v-if="showEmojiPicker" class="emoji-picker-container">
-          <EmojiPicker @select="onEmojiSelect" :i18n="emojiI18n" class="custom-emoji-picker" />
+          <EmojiPicker
+            @select="onEmojiSelect"
+            :i18n="emojiI18n"
+            class="custom-emoji-picker"
+          />
         </div>
       </div>
     </a-drawer>
@@ -231,9 +251,9 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import ShareModal from '@/components/ShareModal.vue'
-import { h, onMounted, reactive, ref, nextTick, computed } from 'vue'
+import { h, onMounted, onUnmounted, reactive, ref, nextTick, computed } from 'vue'
 import {
   DeleteOutlined,
   EditOutlined,
@@ -242,9 +262,9 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  ArrowRightOutlined,
   SmileOutlined,
   MessageOutlined,
+  ArrowRightOutlined,
 } from '@ant-design/icons-vue'
 import { deletePictureUsingPost } from '@/api/pictureController.ts'
 import { message, Modal } from 'ant-design-vue'
@@ -253,25 +273,27 @@ import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import CommentList from '@/components/CommentList.vue'
 import { addCommentUsingPost, queryCommentUsingPost } from '@/api/commentsController.ts'
 import { throttle } from 'vant/es/lazyload/vue-lazyload/util'
-import PictureLikeRequest = API.PictureLikeRequest
-import { DEVICE_TYPE_ENUM } from '@/constants/device.ts'
-import { getDeviceType } from '@/utils/device.ts'
+// import EmojiPicker from "vue3-emoji-picker";
 import EmojiPicker from '@/components/EmojiPicker.vue'
+import '@lottiefiles/lottie-player'
+
+import PictureLikeRequest = API.PictureLikeRequest
 
 const loginUserStore = useLoginUserStore()
 const currPicture = ref<API.PictureVO>()
 //回复评论id
 const replyCommentId = ref<string>('')
 
-// 添加设备类型检测
-const device = ref<string>('')
-
 onMounted(async () => {
-  device.value = await getDeviceType()
   replyCommentId.value = ''
   currPicture.value = props.dataList[0]
+  // console.log(props.dataList)
 })
-
+// 获取默认头像
+const getDefaultAvatar = (userName: string) => {
+  const defaultName = userName || 'Guest'
+  return `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(defaultName)}&backgroundColor=ffd5dc,ffdfbf,ffd5dc`
+}
 interface Props {
   dataList?: API.PictureVO[]
   loading?: boolean
@@ -293,19 +315,20 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const router = useRouter()
+
 const handleReplyClick = (commentId: string) => {
   // console.log('MobilePictureList - 回复被点击，评论 ID:', commentId)
   replyCommentId.value = commentId
 
-  // 强制更新输入框状态
-  nextTick(() => {
-    const inputEl = document.querySelector('.comment-input .ant-input') as HTMLInputElement
-    if (inputEl) {
+  // 更新输入框占位符
+  const inputEl = document.querySelector('.comment-input') as HTMLInputElement
+  if (inputEl) {
+    nextTick(() => {
       inputEl.focus()
       // 滚动到输入框位置
       inputEl.scrollIntoView({ behavior: 'smooth', block: 'end' })
-    }
-  })
+    })
+  }
 }
 
 // 评论
@@ -316,7 +339,7 @@ const visible = ref(false)
 const comments = ref<API.CommentsQueryRequest[]>([])
 
 // 存储用户输入的评论内容
-const newCommentContent = ref('')
+const commentContent = ref('')
 
 // 存储第一个评论列表数据
 const firstcomment = ref<API.CommentsQueryRequest[]>([])
@@ -333,6 +356,22 @@ const queryRequest = reactive<API.CommentsQueryRequest>({
   current: 1,
   pageSize: 15,
 })
+
+// 处理用户点击
+const handleUserClick = (user) => {
+  if (!user) return
+  router.push({
+    path: `/user/${user.id}`,
+    query: {
+      userName: user.userName,
+      userAvatar: user.userAvatar,
+      userAccount: user.userAccount,
+      userProfile: user.userProfile,
+      userRole: user.userRole,
+      createTime: user.createTime
+    }
+  })
+}
 
 //删除评论刷新操作
 const updateComments = async () => {
@@ -363,6 +402,8 @@ const doComments = async (picture, e) => {
   queryRequest.pictureId = picture.id
   e.stopPropagation()
   visible.value = true
+  // 随机切换宠物
+  currentPet.value = PETS[Math.floor(Math.random() * PETS.length)]
   try {
     // 数据清理操作
     comments.value = [] // 先清空评论数据
@@ -420,49 +461,58 @@ const closeModal = () => {
   visible.value = false
   // 数据清理操作
   firstcomment.value = []
-  newCommentContent.value = ''
+  commentContent.value = ''
   showFirstComment.value = false
   commentloading.value = false // 关闭加载状态
 }
 
-const requestBody: API.CommentsAddRequest = {
-  content: newCommentContent.value,
-  parentCommentId: 0, // 这里将 parentCommentId 设为 0，可根据需求修改
-  pictureId: 0,
-  userId: loginUserStore.loginUser.id,
-}
-// 添加评论
+// 修改评论提交函数
 const addComment = async () => {
   try {
-    if (!newCommentContent.value.trim()) {
+    // 使用 commentContent 而不是 newCommentContent
+    if (!commentContent.value.trim()) {
       message.warning('评论内容不能为空')
       return
     }
 
+    // 确保 currPicture 存在
+    if (!currPicture.value?.id) {
+      message.error('图片信息获取失败')
+      return
+    }
+
     const requestBody: API.CommentsAddRequest = {
-      content: newCommentContent.value,
-      // 使用字符串形式传递 parentCommentId
-      parentCommentId: replyCommentId.value ? replyCommentId.value : '0',
+      content: commentContent.value.trim(),
+      // 使用 replyCommentId 而不是 replyToId
+      parentCommentId: replyCommentId.value || '0',
       pictureId: currPicture.value.id,
       userId: loginUserStore.loginUser.id,
     }
 
-    // console.log('发送评论请求体:', requestBody) // 添加日志
+    // console.log('发送评论请求体:', requestBody)
 
     const res = await addCommentUsingPost(requestBody)
     if (res.data.code === 0) {
       message.success('评论成功')
-      newCommentContent.value = ''
+      // 播放宠物庆祝动画
+      if (petAnimation.value) {
+        petAnimation.value.play()
+      }
+      // 清空输入内容和状态
+      commentContent.value = ''
       replyCommentId.value = ''
+      showEmojiPicker.value = false
 
       // 刷新评论列表
       queryRequest.current = 1
       page.value = 1
       isEndOfData.value = false
       await updateComments()
+    } else {
+      message.error('评论失败：' + res.data.message)
     }
   } catch (error) {
-    console.error('添加评论失败，请求体:', requestBody, '错误:', error)
+    console.error('评论失败:', error)
     message.error('评论失败，请稍后重试')
   }
 }
@@ -572,32 +622,20 @@ const doLike = async (picture, e) => {
 
 // 分享操作相关变量
 const shareModalRef = ref()
-const shareLink = ref<string>()
+const shareLink = ref<string>('')
+const shareImage = ref('')
 // 用于存储每个分享按钮的颜色，以图片id作为键
 const shareButtonColor = ref<{ [key: string]: string }>({})
 
-// 分享
-const doShare = async (picture, e) => {
+// 处理分享
+const doShare = async (picture: API.PictureVO, e: Event) => {
   e.stopPropagation()
-  const params: API.UserShareUsingPOSTParams = {
-    pictureId: picture.id,
-  }
-  try {
-    const res = await userShareUsingPost(params)
-    if (res.data.code === 0) {
-      picture.shareCount++
-      shareLink.value = `${window.location.protocol}//${window.location.host}/picture/${picture.id}`
-      if (shareModalRef.value) {
-        shareModalRef.value.openModal()
-      }
-      // 设置分享按钮点击后的颜色为蓝色
-      shareButtonColor.value[picture.id] = '#60c3d5'
-      // 设置分享按钮点击后的颜色为蓝色
-      shareButtonColor.value[picture.id] = '#60c3d5'
-    }
-  } catch (error) {
-    message.error('分享异常')
-  }
+  // 设置分享链接
+  shareLink.value = `${window.location.origin}/picture/${picture.id}`
+  // 设置分享图片
+  shareImage.value = picture.url || picture.thumbnailUrl
+  // 打开分享模态框
+  shareModalRef.value?.openModal()
 }
 // 格式化数字的函数，将较大数字转换为带k、w的格式，保留两位小数
 const formatNumber = (num: number): string => {
@@ -611,12 +649,37 @@ const formatNumber = (num: number): string => {
   return num.toString()
 }
 
-// 取消回复状态
+// 取消回复
 const cancelReply = () => {
-  if (replyCommentId.value) {
-    replyCommentId.value = ''
-  }
+  replyCommentId.value = ''
 }
+
+// 处理返回键
+const handleBackButton = () => {
+  if (visible.value) {
+    visible.value = false
+    return true
+  }
+  return false
+}
+
+// 监听返回键
+onMounted(() => {
+  window.addEventListener('popstate', () => {
+    if (handleBackButton()) {
+      // 阻止默认的返回行为
+      history.pushState(null, '', document.URL)
+    }
+  })
+
+  // 初始化时添加一个历史记录，用于触发 popstate
+  history.pushState(null, '', document.URL)
+})
+
+// 清理监听器
+onUnmounted(() => {
+  window.removeEventListener('popstate', handleBackButton)
+})
 
 // 审核弹窗相关
 const reviewModalVisible = ref(false)
@@ -640,6 +703,7 @@ const getReviewModalTitle = (status?: number) => {
   }
 }
 
+// 评论相关状态
 // 表情选择器相关
 const showEmojiPicker = ref(false)
 
@@ -648,8 +712,122 @@ const toggleEmojiPicker = () => {
 }
 
 const onEmojiSelect = (emoji: string) => {
-  newCommentContent.value += emoji
+  commentContent.value += emoji
 }
+
+// 提交评论
+const submitComment = async () => {
+  if (!commentContent.value.trim()) {
+    message.warning('评论内容不能为空')
+    return
+  }
+
+  try {
+    const res = await addCommentUsingPost({
+      content: commentContent.value,
+      parentCommentId: replyToId.value || '0',
+      pictureId: currPicture.value?.id,
+      userId: loginUserStore.loginUser.id
+    })
+
+    if (res.data.code === 0) {
+      message.success('评论成功')
+      commentContent.value = ''
+      showEmojiPicker.value = false
+      replyToId.value = ''
+      await updateComments()
+    } else {
+      message.error('评论失败：' + res.data.message)
+    }
+  } catch (error) {
+    console.error('评论失败:', error)
+    message.error('评论失败，请稍后重试')
+  }
+}
+
+// 回车提交评论
+const handleEnterPress = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    submitComment()
+  }
+}
+
+// 处理回复评论
+const handleReply = (commentId: string) => {
+  replyToId.value = commentId
+  // 聚焦输入框
+  const input = document.querySelector('.comment-input')
+  if (input) {
+    (input as HTMLElement).focus()
+  }
+}
+
+// 暴露方法给父组件
+defineExpose({
+  handleReply
+})
+
+// 表情选择器国际化配置
+const emojiI18n = {
+  categories: {
+    recent: '最近使用',
+    smileys: '表情符号',
+    people: '人物',
+    animals: '动物与自然',
+    food: '食物与饮料',
+    activities: '活动',
+    travel: '旅行与地点',
+    objects: '物品',
+    symbols: '符号',
+    flags: '旗帜'
+  },
+  search: '搜索表情',
+  clear: '清除',
+  notFound: '未找到表情'
+}
+
+// 宠物动画列表
+const PETS = [
+  {
+    name: 'dog',
+    url: 'https://assets5.lottiefiles.com/packages/lf20_syqnfe7c.json'
+  },
+  {
+    name: 'cat',
+    url: 'https://assets2.lottiefiles.com/packages/lf20_bkqn2x.json'
+  },
+  {
+    name: 'rabbit',
+    url: 'https://assets8.lottiefiles.com/packages/lf20_GofK09iPAE.json'
+  },
+  {
+    name: 'hamster',
+    url: 'https://assets4.lottiefiles.com/packages/lf20_yriifcqx.json'
+  },
+  {
+    name: 'bird',
+    url: 'https://assets3.lottiefiles.com/private_files/lf30_d5nmlcv1.json'
+  },
+  {
+    name: 'panda',
+    url: 'https://assets9.lottiefiles.com/packages/lf20_swnrn2oy.json'
+  },
+  {
+    name: 'penguin',
+    url: 'https://assets10.lottiefiles.com/packages/lf20_dw8rzsix.json'
+  },
+  {
+    name: 'fox',
+    url: 'https://assets1.lottiefiles.com/packages/lf20_zw7jo1.json'
+  }
+]
+
+// 当前宠物动画
+const currentPet = ref(PETS[Math.floor(Math.random() * PETS.length)])
+
+// 宠物动画相关
+const petAnimation = ref(null)
 </script>
 
 <style scoped>
@@ -699,34 +877,15 @@ const onEmojiSelect = (emoji: string) => {
 
 .image-wrapper {
   position: relative;
-  width: 100%;
-  padding-top: 66%; /* 修改为 75% 来实现 4:3 的宽高比 */
+  overflow: hidden;
   background: #f8fafc;
-  border-radius: 12px 12px 0 0;
-  overflow: hidden;
-}
+  border-radius: 16px 16px 0 0;
 
-.image-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.image-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* 保持图片比例并填充容器 */
-  transition: transform 0.3s ease;
-}
-
-.picture-card:hover .image-container img {
-  transform: scale(1.05);
+  img {
+    width: 100%;
+    display: block;
+    transition: transform 0.3s ease;
+  }
 }
 
 .interaction-bar {
@@ -759,85 +918,65 @@ const onEmojiSelect = (emoji: string) => {
 .operation-buttons {
   display: flex;
   justify-content: space-around;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.8);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.action-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-
-  .anticon {
-    font-size: 16px;
-  }
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.02);
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
+  padding: 0 12px;
 }
 
 .edit-button {
   color: #ff8e53;
-
-  &:hover {
-    color: #ff7a3d;
-    background: rgba(255, 142, 83, 0.1);
-  }
 }
 
 .search-button {
   color: #45b090;
-
-  &:hover {
-    color: #3a9579;
-    background: rgba(69, 176, 144, 0.1);
-  }
 }
 
 .delete-button {
   color: #ff6b6b;
-
-  &:hover {
-    color: #ff5252;
-    background: rgba(255, 107, 107, 0.1);
-  }
 }
 
 /* 评论抽屉样式 */
 .comments-drawer {
   :deep(.ant-drawer-content) {
-    border-radius: 0; /* 移除默认圆角 */
-  }
-
-  :deep(.ant-drawer-content-wrapper) {
-    /* PC 端右侧抽屉样式 */
-    @media screen and (min-width: 769px) {
-      box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
-    }
-  }
-
-  /* 移动端底部抽屉样式 */
-  @media screen and (max-width: 768px) {
-    :deep(.ant-drawer-content) {
-      border-radius: 16px 16px 0 0;
-    }
+    border-radius: 16px 16px 0 0;
+    background: #f8fafc;
   }
 
   :deep(.ant-drawer-header) {
     padding: 16px 24px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid rgba(255, 142, 83, 0.1);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    position: relative;
+
+    .ant-drawer-title {
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+
+    /* 增加选择器优先级 */
+    :deep(.ant-drawer-close) {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      left: auto !important; /* 强制覆盖默认样式 */
+      color: #94a3b8;
+      padding: 8px;
+      transition: all 0.3s ease;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1008;
+      margin: 0 !important;
+
+      &:hover {
+        color: #64748b;
+        transform: rotate(90deg);
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      &:active {
+        transform: scale(0.9) rotate(90deg);
+      }
+    }
   }
 
   :deep(.ant-drawer-body) {
@@ -848,7 +987,7 @@ const onEmojiSelect = (emoji: string) => {
 .drawer-content {
   padding: 16px;
   overflow-y: auto;
-  height: calc(100% - 120px); /* 调整滚动区域高度 */
+  height: calc(100vh - 200px);
 }
 
 .loading-container {
@@ -866,139 +1005,116 @@ const onEmojiSelect = (emoji: string) => {
 }
 
 .comment-input-wrapper {
-  position: absolute; /* 改为 absolute 定位 */
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 12px 16px;
-  background: white;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  z-index: 1000;
-
-  &.is-replying {
-    padding-top: 12px;
-    transform: translateY(-8px);
-    background: #f8fafc;
-    animation: slideUp 0.3s ease;
-  }
-}
-
-.reply-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: #fff6f3;
-  border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid #ffe4d9;
-}
-
-.reply-text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.reply-label {
-  font-size: 13px;
-  color: #ff8e53;
-  font-weight: 500;
-}
-
-.reply-arrow {
-  font-size: 12px;
-  color: #ff8e53;
-}
-
-.cancel-reply {
-  cursor: pointer;
-  padding: 4px;
-  color: #ff8e53;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.cancel-reply:hover {
-  transform: rotate(90deg);
-}
-
-.input-area {
-  display: flex;
-  gap: 8px;
   padding: 12px;
   background: white;
-  transition: all 0.3s ease;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  z-index: 1000;
 }
 
-.input-area.is-replying {
-  background: #fff6f3;
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 4px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .emoji-trigger {
-  cursor: pointer;
-  font-size: 20px;
-  color: #94a3b8;
-  transition: all 0.3s ease;
   padding: 8px;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.picture-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.emoji-trigger:hover,
+.picture-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  &:hover {
+    color: #ff8e53;
+  }
+}
 .emoji-trigger.active {
   color: #ff8e53;
   transform: scale(1.1);
 }
 
-.reply-icon {
-  color: #ff8e53;
-  margin-right: 4px;
-}
-
 .comment-input {
-  border-radius: 18px;
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 0;
 }
 
-.word-count {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.send-button {
-  min-width: 64px;
-  height: 36px;
-  border-radius: 18px;
+.submit-btn {
+  height: 32px;
+  border-radius: 16px;
+  padding: 0 16px;
   background: linear-gradient(135deg, #ff8e53 0%, #ff6b6b 100%);
   border: none;
-  transition: all 0.3s ease;
+  font-size: 14px;
 }
 
-.reply-button {
-  background: linear-gradient(135deg, #ff9c6e 0%, #ff8e53 100%);
-  box-shadow: 0 2px 8px rgba(255, 142, 83, 0.2);
-}
-
+/* 表情选择器容器样式 */
 .emoji-picker-container {
   position: absolute;
   bottom: 100%;
   left: 0;
+  right: 0;
+  background: white;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
   z-index: 1000;
   animation: slideUp 0.3s ease;
 }
 
 @keyframes slideUp {
   from {
+    transform: translateY(20px);
     opacity: 0;
-    transform: translateY(10px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
+    opacity: 1;
   }
 }
 
-.comments-area {
-  min-height: calc(100% - 80px); /* 减去输入框的高度 */
-  padding-bottom: 80px;
+/* 自定义表情选择器样式 */
+:deep(.emoji-picker) {
+  width: 100%;
+  border: none;
+  padding: 12px;
+
+  .emoji-picker__search {
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .emoji-picker__category-name {
+    font-size: 13px;
+    padding: 8px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
 }
 
 .review-status {
@@ -1054,59 +1170,294 @@ const onEmojiSelect = (emoji: string) => {
   font-size: 14px;
 }
 
-/* 审核弹窗样式 */
+/* 审核弹窗样式优化 */
+.review-modal {
+  :deep(.ant-modal-content) {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  :deep(.ant-modal-header) {
+    border-bottom: none;
+    padding: 20px 24px 0;
+  }
+
+  :deep(.ant-modal-title) {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  :deep(.ant-modal-body) {
+    padding: 20px 24px 24px;
+  }
+}
+
 .review-detail {
   text-align: center;
   padding: 24px;
+  background: #f8fafc;
+  border-radius: 12px;
 }
 
 .status-icon-large {
   font-size: 48px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 
   .pending {
     color: #1890ff;
+    filter: drop-shadow(0 4px 8px rgba(24, 144, 255, 0.2));
   }
 
   .approved {
     color: #52c41a;
+    filter: drop-shadow(0 4px 8px rgba(82, 196, 26, 0.2));
   }
 
   .rejected {
     color: #ff4d4f;
+    filter: drop-shadow(0 4px 8px rgba(255, 77, 79, 0.2));
   }
 }
 
 .review-message {
   font-size: 16px;
   color: #1f2937;
-  line-height: 1.5;
+  line-height: 1.6;
+  padding: 0 16px;
 }
 
 /* 响应式调整 */
 @media screen and (max-width: 768px) {
-  .review-button {
-    padding: 4px 8px;
-  }
+  .review-modal {
+    :deep(.ant-modal-content) {
+      border-radius: 12px;
+    }
 
-  .status-icon {
-    font-size: 14px;
-  }
+    :deep(.ant-modal-header) {
+      padding: 16px 20px 0;
+    }
 
-  .status-text {
-    font-size: 13px;
+    :deep(.ant-modal-title) {
+      font-size: 16px;
+    }
+
+    :deep(.ant-modal-body) {
+      padding: 16px 20px 20px;
+    }
   }
 
   .review-detail {
-    padding: 16px;
+    padding: 20px;
   }
 
   .status-icon-large {
     font-size: 40px;
+    margin-bottom: 16px;
   }
 
   .review-message {
     font-size: 14px;
+    padding: 0 12px;
+  }
+}
+
+.emoji-picker-container {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* 自定义表情选择器样式 */
+:deep(.emoji-picker) {
+  width: 100%;
+  border: none;
+
+  .emoji-picker__search {
+    padding: 8px;
+    background: #f8fafc;
+  }
+
+  .emoji-picker__category-name {
+    font-size: 13px;
+    padding: 8px;
+    color: #94a3b8;
+  }
+}
+
+/* 优化表情选择器样式 */
+.custom-emoji-picker {
+  :deep(.emoji-picker) {
+    width: 100%;
+    border: none;
+    padding: 16px;
+    background: white;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.1);
+
+    .emoji-picker__search {
+      padding: 8px;
+      background: #f8fafc;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .emoji-picker__category-name {
+      font-size: 13px;
+      padding: 8px;
+      color: #64748b;
+      font-weight: 500;
+    }
+  }
+}
+
+.reply-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #fff6f3;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #ffe4d9;
+}
+
+.reply-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reply-label {
+  font-size: 13px;
+  color: #ff8e53;
+  font-weight: 500;
+}
+
+.reply-arrow {
+  font-size: 12px;
+  color: #ff8e53;
+}
+
+.cancel-reply {
+  cursor: pointer;
+  padding: 4px;
+  color: #ff8e53;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.cancel-reply:hover {
+  transform: rotate(90deg);
+}
+
+.input-area {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.input-area.is-replying {
+  background: #fff6f3;
+}
+
+.reply-icon {
+  color: #ff8e53;
+  margin-right: 4px;
+}
+
+.comment-input {
+  border-radius: 18px;
+}
+
+.word-count {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.send-button {
+  min-width: 64px;
+  height: 36px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ff8e53 0%, #ff6b6b 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.reply-button {
+  background: linear-gradient(135deg, #ff9c6e 0%, #ff8e53 100%);
+  box-shadow: 0 2px 8px rgba(255, 142, 83, 0.2);
+}
+
+/* 输入框聚焦状态 */
+:deep(.ant-input-affix-wrapper:focus),
+:deep(.ant-input-affix-wrapper-focused) {
+  border-color: #ff8e53 !important;
+  box-shadow: 0 0 0 2px rgba(255, 142, 83, 0.1) !important;
+}
+
+.emoji-picker-container :deep(.v3-footer){
+  display: none;
+}
+
+.emoji-picker-container :deep(.v3-body){
+}
+
+/* 添加宠物动画样式 */
+.pet-animation {
+  position: fixed;
+  right: 20px;
+  bottom: 100px;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: scale(0.8);
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease;
+}
+
+/* 当评论抽屉打开时的动画效果 */
+.comments-drawer:deep(.ant-drawer-content-wrapper) {
+  .pet-animation {
+    animation: bounce 1s ease infinite;
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(0.8) translateY(0);
+  }
+  50% {
+    transform: scale(0.8) translateY(-10px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0.9;
+    transform: scale(0.8);
+  }
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .pet-animation {
+    right: 10px;
+    bottom: 80px;
+    transform: scale(0.6);
   }
 }
 </style>
+
