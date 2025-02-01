@@ -296,7 +296,7 @@
                       </van-tag>
                       <template v-if="picture.tags">
                         <van-tag
-                          v-for="tag in JSON.parse(picture.tags)"
+                          v-for="tag in picture.tags"
                           :key="tag"
                           type="success"
                           round
@@ -1407,23 +1407,6 @@ const confirmDelete = async () => {
   width: 120px !important;
 }
 
-/* 搜索按钮样式 */
-.search-button {
-  background: linear-gradient(135deg, #36cfc9 0%, #13c2c2 100%);
-  border: none;
-  box-shadow: 0 4px 12px rgba(19, 194, 194, 0.2);
-}
-
-.search-button:hover {
-  background: linear-gradient(135deg, #40d9d4 0%, #36cfc9 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(19, 194, 194, 0.3);
-}
-
-.search-button:active {
-  background: linear-gradient(135deg, #13c2c2 0%, #08979c 100%);
-  transform: translateY(0);
-}
 
 /* 表格中的标签样式 */
 .tag-item {

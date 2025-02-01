@@ -1,3 +1,31 @@
+/* 亮色主题 */
+html[data-theme='light'] {
+  --background-color: #ffffff;
+  --text-color: rgba(0, 0, 0, 0.85);
+  --menu-background: transparent;
+  --menu-text-color: #666666;
+  --menu-hover-background: rgba(0, 0, 0, 0.04);
+  --menu-selected-color: #333333;
+  --input-background: #ffffff;
+  --input-border-color: #d9d9d9;
+  --button-background: #1890ff;
+  --button-border-color: #1890ff;
+}
+
+/* 暗色主题 */
+html[data-theme='dark'] {
+  --background-color: #141414;
+  --text-color: rgba(255, 255, 255, 0.85);
+  --menu-background: transparent;
+  --menu-text-color: rgba(255, 255, 255, 0.85);
+  --menu-hover-background: rgba(255, 255, 255, 0.08);
+  --menu-selected-color: rgba(255, 255, 255, 0.95);
+  --input-background: #1f1f1f;
+  --input-border-color: #434343;
+  --button-background: #177ddc;
+  --button-border-color: #177ddc;
+}
+
 :root {
     --text-color-light: rgba(0, 0, 0, 0.85);
     --text-color-dark: rgba(255, 255, 255, 0.85);
@@ -7,12 +35,28 @@
     --border-color-dark: #303030;
     --border-color-light: #f0f0f0;
   }
-  
+/* 搜索按钮样式 */
+.search-button {
+    background: linear-gradient(135deg, #36cfc9 0%, #13c2c2 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(19, 194, 194, 0.2);
+}
+
+.search-button:hover {
+    background: linear-gradient(135deg, #40d9d4 0%, #36cfc9 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(19, 194, 194, 0.3);
+}
+
+.search-button:active {
+    background: linear-gradient(135deg, #13c2c2 0%, #08979c 100%);
+    transform: translateY(0);
+}
   /* 全局过渡效果 */
   * {
     transition: background-color 0.3s, color 0.3s, border-color 0.3s;
   }
-  
+
   /* 亮色主题 - 默认样式 */
   body {
     background-color: var(--background-color-light);
@@ -336,4 +380,51 @@
   /* 确保页面容器背景色 */
   body[data-theme='dark'] .ant-layout-content > div {
     background-color: var(--background-color-dark) !important;
+  }
+
+  /* Layout 相关样式 */
+  body[data-theme='dark'] .ant-layout,
+  body[data-theme='dark'] .ant-layout-sider,
+  body[data-theme='dark'] .ant-layout-sider-children,
+  body[data-theme='dark'] .ant-layout-header,
+  body[data-theme='dark'] .ant-layout-content,
+  body[data-theme='dark'] .ant-layout-footer,
+  body[data-theme='dark'] .ant-menu-light {
+    background: var(--component-background-dark) !important;
+  }
+
+  /* 侧边栏内部元素 */
+  body[data-theme='dark'] .ant-layout-sider-children {
+    border-right: 1px solid var(--border-color-dark);
+  }
+
+  /* 侧边栏触发器 */
+  body[data-theme='dark'] .ant-layout-sider-trigger {
+    background: var(--component-background-dark);
+    border-top: 1px solid var(--border-color-dark);
+    color: var(--text-color-dark);
+  }
+
+  /* 侧边栏折叠按钮 */
+  body[data-theme='dark'] .ant-layout-sider-zero-width-trigger {
+    background: var(--component-background-dark);
+    color: var(--text-color-dark);
+  }
+
+  /* 内容区域的背景 */
+  body[data-theme='dark'] .ant-layout-content {
+    background: var(--background-color-dark) !important;
+  }
+
+  /* 确保内容区域内的所有容器背景色 */
+  body[data-theme='dark'] .ant-layout-content > div,
+  body[data-theme='dark'] .ant-layout-content .page-container,
+  body[data-theme='dark'] .ant-layout-content .content-wrapper {
+    background: var(--background-color-dark) !important;
+  }
+
+  /* 头部和底部 */
+  body[data-theme='dark'] .ant-layout-header,
+  body[data-theme='dark'] .ant-layout-footer {
+    border-color: var(--border-color-dark);
   }

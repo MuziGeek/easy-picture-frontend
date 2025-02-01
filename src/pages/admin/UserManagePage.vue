@@ -17,7 +17,7 @@
               <a-input v-model:value="searchParams.userName" placeholder="输入用户名" allow-clear />
             </a-form-item>
             <a-form-item>
-              <a-button type="primary" html-type="submit" class="action-button">
+              <a-button type="primary" html-type="submit" class="action-button search-button">
                 <SearchOutlined />
                 搜索
               </a-button>

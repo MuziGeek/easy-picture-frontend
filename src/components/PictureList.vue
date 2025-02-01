@@ -90,7 +90,7 @@
                 </a-button>
                 <a-button
                   type="link"
-                  class="action-button search-button"
+                  class="action-button search-button_list"
                   @click="(e) => doSearch(picture, e)"
                 >
                   <SearchOutlined />
@@ -797,7 +797,7 @@ const onEmojiSelect = (emoji: string) => {
   }
 }
 
-.search-button {
+.search-button_list {
   color: #45b090;
 
   &:hover {

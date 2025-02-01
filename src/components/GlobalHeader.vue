@@ -520,6 +520,92 @@ onMounted(() => {
 </script>
 
 <style scoped>
+#globalHeader {
+  background: var(--background-color);
+  color: var(--text-color);
+}
+
+:deep(.ant-menu) {
+  background: var(--menu-background);
+  color: var(--menu-text-color);
+}
+
+:deep(.ant-menu-item) {
+  color: var(--menu-text-color);
+}
+
+:deep(.ant-menu-item:hover) {
+  background: var(--menu-hover-background);
+}
+
+:deep(.ant-menu-item-selected) {
+  color: var(--menu-selected-color) !important;
+}
+
+.search-bar :deep(.ant-input) {
+  background: var(--input-background);
+  color: var(--text-color);
+  border-color: var(--input-border-color);
+}
+
+.search-bar :deep(.ant-input-search-button) {
+  background: var(--button-background);
+  border-color: var(--button-border-color);
+}
+
+.user-login-status {
+  color: var(--text-color);
+}
+
+/* 亮色主题样式 */
+html[data-theme='light'] #globalHeader {
+  background: #fff;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+html[data-theme='light'] :deep(.ant-menu) {
+  background: transparent;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+/* 暗色主题样式 */
+html[data-theme='dark'] #globalHeader {
+  background: #141414;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme='dark'] :deep(.ant-menu) {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme='dark'] :deep(.ant-menu-item) {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme='dark'] :deep(.ant-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme='dark'] .logo {
+  filter: brightness(0.8) contrast(1.2);
+}
+
+html[data-theme='dark'] .search-bar :deep(.ant-input) {
+  background: #1f1f1f;
+  color: rgba(255, 255, 255, 0.85);
+  border-color: #434343;
+}
+
+html[data-theme='dark'] .search-bar :deep(.ant-input-search-button) {
+  background: #177ddc;
+  border-color: #177ddc;
+}
+
+html[data-theme='dark'] .user-login-status {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* Logo样式 */
 .logo {
   height: 60px;

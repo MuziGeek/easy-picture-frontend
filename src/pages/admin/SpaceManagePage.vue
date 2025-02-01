@@ -56,7 +56,10 @@
           <a-input v-model:value="searchParams.userId" placeholder="请输入用户 id" allow-clear />
         </a-form-item>
         <a-form-item>
-          <a-button type="primary" html-type="submit">搜索</a-button>
+          <a-button type="primary" html-type="submit" class="action-button search-button">
+            <SearchOutlined />
+            搜索
+          </a-button>
         </a-form-item>
       </a-form>
       <div style="margin-bottom: 16px" />
@@ -334,7 +337,7 @@ import {
   AreaChartOutlined,
   EditOutlined,
   DeleteOutlined,
-  ExclamationCircleFilled,
+  ExclamationCircleFilled, SearchOutlined,
 } from '@ant-design/icons-vue'
 import { getDeviceType } from '@/utils/device.ts'
 import { DEVICE_TYPE_ENUM } from '@/constants/device.ts'
